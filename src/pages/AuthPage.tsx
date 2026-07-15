@@ -3,117 +3,68 @@ import { useAuth } from '../components/AuthContext'
 import { useToast } from '../components/ToastContext'
 
 export function AuthPage() {
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
+  const { signIn, signUp, signInWithOAuth } = useAuth()
+  const { showToast } = useToast()
+  const [isSignUp, setIsSignUp] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [magicLinkSent, setMagicLinkSent] = useState(false)
-  const [resetMode, setResetMode] = useState(false)
-  
-  const { signIn, signUp, signInWithMagicLink, resetPassword } = useAuth()
-  const { showToast } = useToast()
+  const [showForgot, setShowForgot] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-
     try {
-      if (resetMode) {
-        const { error } = await resetPassword(email)
-        if (error) {
-          showToast('error', error.message)
-        } else {
-          showToast('success', 'Password reset email sent!')
-          setResetMode(false)
-        }
-      } else if (mode === 'signin') {
-        const { error } = await signIn(email, password)
-        if (error) {
-          showToast('error', error.message)
-        }
+      if (isSignUp) {
+        await signUp(email, password)
+        showToast('success', 'Check your email for confirmation!')
       } else {
-        const { error } = await signUp(email, password)
-        if (error) {
-          showToast('error', error.message)
-        } else {
-          showToast('success', 'Check your email for confirmation!')
-        }
+        await signIn(email, password)
+        showToast('success', 'Welcome back to Frame!')
       }
+    } catch (error: any) {
+      showToast('error', error.message || 'Authentication failed')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleMagicLink = async () => {
-    if (!email) {
-      showToast('error', 'Please enter your email first')
-      return
-    }
+  const handleOAuth = async (provider: 'google' | 'github') => {
     setLoading(true)
     try {
-      const { error } = await signInWithMagicLink(email)
-      if (error) {
-        showToast('error', error.message)
-      } else {
-        setMagicLinkSent(true)
-        showToast('success', 'Check your email for the magic link!')
-      }
-    } finally {
+      await signInWithOAuth(provider)
+    } catch (error: any) {
+      showToast('error', error.message || 'OAuth failed')
       setLoading(false)
     }
-  }
-
-  if (magicLinkSent) {
-    return (
-      <div className="auth-container">
-        <div className="auth-card">
-          <div className="auth-success">
-            <svg className="auth-success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-              <polyline points="22 4 12 14.01 9 11.01" />
-            </svg>
-            <h2 className="auth-success-title">Check your email</h2>
-            <p className="auth-success-message">
-              We sent a magic link to {email}. Click the link in the email to sign in.
-            </p>
-            <button
-              className="auth-submit"
-              onClick={() => setMagicLinkSent(false)}
-            >
-              Try again
-            </button>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <h1 className="auth-logo">CAMBRIC</h1>
-          <p className="auth-tagline">Frame</p>
-          <span className="auth-product-badge">Creator Workspace</span>
+          <h1 className="auth-logo">FRAME</h1>
+          <p className="auth-tagline">Content Creation Command Center</p>
+          <span className="auth-product-badge">a Cambric product</span>
         </div>
 
-        {!resetMode ? (
-          <>
-            <div className="auth-tabs">
-              <button
-                className={`auth-tab ${mode === 'signin' ? 'active' : ''}`}
-                onClick={() => setMode('signin')}
-              >
-                Sign In
-              </button>
-              <button
-                className={`auth-tab ${mode === 'signup' ? 'active' : ''}`}
-                onClick={() => setMode('signup')}
-              >
-                Sign Up
-              </button>
-            </div>
+        <div className="auth-tabs">
+          <button
+            className={`auth-tab ${!isSignUp ? 'active' : ''}`}
+            onClick={() => setIsSignUp(false)}
+          >
+            Sign In
+          </button>
+          <button
+            className={`auth-tab ${isSignUp ? 'active' : ''}`}
+            onClick={() => setIsSignUp(true)}
+          >
+            Sign Up
+          </button>
+        </div>
 
+        {!showForgot ? (
+          <>
             <form className="auth-form" onSubmit={handleSubmit}>
               <div className="form-group">
                 <label className="form-label">Email</label>
@@ -132,77 +83,105 @@ export function AuthPage() {
                 <input
                   type="password"
                   className="form-input"
-                  placeholder="••••••••"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
                 />
-                {mode === 'signup' && (
-                  <span className="form-hint">Must be at least 6 characters</span>
+                {!isSignUp && (
+                  <button
+                    type="button"
+                    onClick={() => setShowForgot(true)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--color-accent)',
+                      fontSize: 'var(--font-size-xs)',
+                      cursor: 'pointer',
+                      padding: 0,
+                      marginTop: 'var(--space-1)'
+                    }}
+                  >
+                    Forgot password?
+                  </button>
                 )}
               </div>
 
-              <button
-                type="submit"
-                className="auth-submit"
-                disabled={loading}
-              >
-                {loading ? 'Please wait...' : mode === 'signin' ? 'Sign In' : 'Create Account'}
+              <button type="submit" className="auth-submit" disabled={loading}>
+                {loading ? 'Please wait...' : isSignUp ? 'Create Account' : 'Sign In'}
               </button>
             </form>
 
-            {mode === 'signin' && (
-              <>
-                <div className="auth-divider">or</div>
-                <button
-                  className="auth-submit"
-                  onClick={handleMagicLink}
-                  disabled={loading}
-                  style={{ background: 'var(--color-bg-tertiary)', color: 'var(--color-text-primary)' }}
-                >
-                  Send Magic Link
-                </button>
+            <div className="auth-divider">or continue with</div>
 
-                <div className="auth-footer">
-                  <a onClick={() => setResetMode(true)} style={{ cursor: 'pointer' }}>
-                    Forgot your password?
-                  </a>
-                </div>
-              </>
-            )}
+            <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+              <button
+                className="btn btn-ghost"
+                style={{ flex: 1 }}
+                onClick={() => handleOAuth('google')}
+                disabled={loading}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                Google
+              </button>
+              <button
+                className="btn btn-ghost"
+                style={{ flex: 1 }}
+                onClick={() => handleOAuth('github')}
+                disabled={loading}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                </svg>
+                GitHub
+              </button>
+            </div>
+
+            <div className="auth-footer">
+              By continuing, you agree to our Terms of Service and Privacy Policy
+            </div>
           </>
         ) : (
           <>
-            <div className="auth-back-link" onClick={() => setResetMode(false)}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="19" y1="12" x2="5" y2="12" />
-                <polyline points="12 19 5 12 12 5" />
-              </svg>
-              Back to sign in
-            </div>
-
-            <form className="auth-form" onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label className="form-label">Email</label>
-                <input
-                  type="email"
-                  className="form-input"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-
+            <div className="auth-reset-form">
               <button
-                type="submit"
-                className="auth-submit"
-                disabled={loading}
+                className="auth-back-link"
+                onClick={() => setShowForgot(false)}
               >
-                {loading ? 'Sending...' : 'Send Reset Link'}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Back to sign in
               </button>
-            </form>
+
+              <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--space-4)', fontSize: 'var(--font-size-sm)' }}>
+                Enter your email and we'll send you a link to reset your password.
+              </p>
+
+              <form className="auth-form" onSubmit={handleSubmit}>
+                <div className="form-group">
+                  <label className="form-label">Email</label>
+                  <input
+                    type="email"
+                    className="form-input"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <button type="submit" className="auth-submit" disabled={loading}>
+                  {loading ? 'Sending...' : 'Send Reset Link'}
+                </button>
+              </form>
+            </div>
           </>
         )}
       </div>

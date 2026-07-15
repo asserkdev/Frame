@@ -90,6 +90,12 @@
   border-top: 1px solid var(--color-border-subtle);
 }
 
+.sidebar-account {
+  margin-top: auto;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);

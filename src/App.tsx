@@ -3,10 +3,15 @@ import { AuthProvider, useAuth } from './components/AuthContext'
 import { ToastProvider } from './components/ToastContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { AppLayout } from './components/AppLayout'
+import { Dashboard } from './pages/Dashboard'
+import { Pipeline } from './pages/Pipeline'
+import { Projects } from './pages/Projects'
+import { Series } from './pages/Series'
+import { BrandAssets } from './pages/BrandAssets'
+import { Trending } from './pages/Trending'
+import { Optimizer } from './pages/Optimizer'
+import { Calendar } from './pages/Calendar'
 import { AuthPage } from './pages/AuthPage'
-import { IdeasPage } from './pages/IdeasPage'
-import { AssetsPage } from './pages/AssetsPage'
-import { SchedulePage } from './pages/SchedulePage'
 import { isConfigured } from './lib/supabase'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -39,7 +44,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (user) {
-    return <Navigate to="/ideas" replace />
+    return <Navigate to="/dashboard" replace />
   }
 
   return <>{children}</>
@@ -100,12 +105,17 @@ function App() {
                   </ProtectedRoute>
                 }
               >
-                <Route index element={<Navigate to="/ideas" replace />} />
-                <Route path="ideas" element={<IdeasPage />} />
-                <Route path="assets" element={<AssetsPage />} />
-                <Route path="schedule" element={<SchedulePage />} />
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="pipeline" element={<Pipeline />} />
+                <Route path="projects" element={<Projects />} />
+                <Route path="series" element={<Series />} />
+                <Route path="brand-assets" element={<BrandAssets />} />
+                <Route path="trending" element={<Trending />} />
+                <Route path="optimizer" element={<Optimizer />} />
+                <Route path="calendar" element={<Calendar />} />
               </Route>
-              <Route path="*" element={<Navigate to="/ideas" replace />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </BrowserRouter>
         </ToastProvider>
