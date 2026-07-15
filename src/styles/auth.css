@@ -1,24 +1,30 @@
 /* ========================================
-   AUTH STYLES
+   AUTH STYLES - Cambric Shared UI
+   Matches Cambric ecosystem auth design
    ======================================== */
 
 .auth-container {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-4);
+  padding: var(--space-5);
   background: var(--color-bg-primary);
+  background-image: 
+    radial-gradient(ellipse at top, rgba(167, 139, 250, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom, rgba(244, 114, 182, 0.02) 0%, transparent 50%);
 }
 
 .auth-card {
   background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border-subtle);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-2xl);
   padding: var(--space-8);
   width: 100%;
-  max-width: 420px;
-  animation: slideUp var(--transition-base);
+  max-width: 400px;
+  animation: slideUp var(--transition-slow);
+  box-shadow: var(--shadow-lg), 0 0 80px rgba(167, 139, 250, 0.05);
 }
 
 .auth-header {
@@ -29,9 +35,9 @@
 .auth-logo {
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-extrabold);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.15em;
   color: var(--color-text-primary);
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-1);
 }
 
 .auth-tagline {
@@ -45,26 +51,29 @@
 .auth-product-badge {
   display: inline-block;
   margin-top: var(--space-3);
-  padding: var(--space-1) var(--space-3);
+  padding: 4px var(--space-3);
   background: var(--color-accent-subtle);
   border: 1px solid var(--color-accent-muted);
   border-radius: var(--radius-full);
-  font-size: var(--font-size-xs);
+  font-size: 0.625rem;
+  font-weight: var(--font-weight-semibold);
   color: var(--color-accent);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .auth-tabs {
   display: flex;
-  gap: var(--space-1);
+  gap: 2px;
   background: var(--color-bg-tertiary);
-  padding: var(--space-1);
+  padding: 3px;
   border-radius: var(--radius-lg);
   margin-bottom: var(--space-6);
 }
 
 .auth-tab {
   flex: 1;
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-4);
   background: transparent;
   border: none;
   border-radius: var(--radius-md);
@@ -82,12 +91,14 @@
 .auth-tab.active {
   background: var(--color-bg-secondary);
   color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  box-shadow: var(--shadow-sm);
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 .form-group {
@@ -110,12 +121,14 @@
   color: var(--color-text-primary);
   font-size: var(--font-size-base);
   transition: all var(--transition-fast);
+  min-height: 48px;
 }
 
 .form-input:focus {
   outline: none;
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px var(--color-accent-subtle);
+  background: var(--color-bg-secondary);
 }
 
 .form-input::placeholder {
@@ -123,36 +136,42 @@
 }
 
 .form-error {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   color: var(--color-error);
+  margin-top: var(--space-1);
 }
 
 .form-hint {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
+  margin-top: var(--space-1);
 }
 
 .auth-submit {
   margin-top: var(--space-2);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-5);
   background: var(--color-accent);
   border: none;
   border-radius: var(--radius-lg);
-  color: var(--color-bg-primary);
+  color: #0c0c0e;
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
   transition: all var(--transition-fast);
+  min-height: 48px;
+  letter-spacing: 0.02em;
 }
 
 .auth-submit:hover:not(:disabled) {
   background: var(--color-accent-hover);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(167, 139, 250, 0.3);
 }
 
 .auth-submit:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 .auth-divider {
@@ -161,7 +180,9 @@
   gap: var(--space-4);
   margin: var(--space-6) 0;
   color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 .auth-divider::before,
@@ -169,7 +190,7 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--color-border-subtle);
+  background: linear-gradient(to right, transparent, var(--color-border), transparent);
 }
 
 .auth-footer {
@@ -184,6 +205,7 @@
 .auth-footer a {
   color: var(--color-accent);
   text-decoration: none;
+  font-weight: var(--font-weight-medium);
 }
 
 .auth-footer a:hover {
@@ -192,14 +214,15 @@
 
 .auth-success {
   text-align: center;
-  padding: var(--space-4);
+  padding: var(--space-6);
 }
 
 .auth-success-icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto var(--space-4);
+  width: 72px;
+  height: 72px;
+  margin: 0 auto var(--space-5);
   color: var(--color-success);
+  animation: scaleIn 0.3s ease;
 }
 
 .auth-success-title {
@@ -211,8 +234,9 @@
 
 .auth-success-message {
   font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   margin-bottom: var(--space-6);
+  line-height: 1.6;
 }
 
 /* Password Reset */
@@ -247,12 +271,12 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 .auth-loading-spinner {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border: 3px solid var(--color-border);
   border-top-color: var(--color-accent);
   border-radius: 50%;
@@ -262,15 +286,46 @@
 .auth-loading-text {
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
+  letter-spacing: 0.05em;
+}
+
+/* Additional animations */
+@keyframes scaleIn {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* Responsive auth */
 @media (max-width: 480px) {
+  .auth-container {
+    padding: var(--space-4);
+  }
+  
   .auth-card {
     padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    max-width: 100%;
   }
   
   .auth-logo {
     font-size: var(--font-size-xl);
+  }
+  
+  .auth-success-icon {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+/* Tablet */
+@media (min-width: 481px) and (max-width: 768px) {
+  .auth-card {
+    max-width: 440px;
   }
 }
