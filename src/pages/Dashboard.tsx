@@ -1,35 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../components/AuthContext'
 import { useToast } from '../components/ToastContext'
-import { PIPELINE_STAGES, PLATFORMS, ProjectStatus } from '../lib/supabase'
-
-// Mock data for initial implementation
-const MOCK_PROJECTS = [
-  { id: '1', title: 'Building a SaaS in 2024', content_type: 'video', platforms: ['youtube', 'tiktok'], status: 'production' as ProjectStatus, updated_at: '2024-01-15' },
-  { id: '2', title: 'Top 10 VS Code Extensions', content_type: 'video', platforms: ['youtube'], status: 'research' as ProjectStatus, updated_at: '2024-01-14' },
-  { id: '3', title: 'React Hooks Deep Dive', content_type: 'course', platforms: ['youtube', 'blog'], status: 'planning' as ProjectStatus, updated_at: '2024-01-13' },
-  { id: '4', title: 'Productivity Tips Thread', content_type: 'social', platforms: ['twitter', 'linkedin'], status: 'review' as ProjectStatus, updated_at: '2024-01-12' },
-  { id: '5', title: 'Indie Hacker Interview', content_type: 'podcast', platforms: ['podcast', 'youtube'], status: 'published' as ProjectStatus, updated_at: '2024-01-11' },
-]
-
-const MOCK_PIPELINE_COUNTS: Record<string, number> = {
-  research: 3,
-  outline: 2,
-  script: 4,
-  record: 2,
-  edit: 3,
-  thumbnail: 1,
-  seo: 2,
-  upload: 1,
-  published: 12,
-}
-
-const MOCK_UPCOMING = [
-  { id: '1', title: 'SaaS Tutorial Part 1', scheduled_date: '2024-01-20', platforms: ['youtube'] },
-  { id: '2', title: 'VS Code Tips Thread', scheduled_date: '2024-01-21', platforms: ['twitter'] },
-  { id: '3', title: 'Podcast Episode 15', scheduled_date: '2024-01-22', platforms: ['podcast', 'youtube'] },
-]
+import { supabase, PIPELINE_STAGES, PLATFORMS, FrameProject, FrameSchedule } from '../lib/supabase'
 
 const PLATFORM_COLORS: Record<string, string> = {
   youtube: '#ff0000',
@@ -43,17 +16,61 @@ const PLATFORM_COLORS: Record<string, string> = {
 }
 
 export function Dashboard() {
-  useAuth()
-  useToast()
+  const { user } = useAuth()
+  const { showToast } = useToast()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
-  const [projects] = useState(MOCK_PROJECTS)
-  const [pipelineCounts] = useState(MOCK_PIPELINE_COUNTS)
+  const [projects, setProjects] = useState<FrameProject[]>([])
+  const [pipelineCounts, setPipelineCounts] = useState<Record<string, number>>({})
+  const [upcomingSchedule, setUpcomingSchedule] = useState<FrameSchedule[]>([])
+
+  const fetchDashboardData = useCallback(async () => {
+    if (!user) return
+    
+    try {
+      // Fetch projects
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('frame_projects')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(5)
+      
+      if (projectsError) throw projectsError
+      setProjects(projectsData || [])
+      
+      // Fetch pipeline counts
+      const { data: pipelineData } = await supabase
+        .from('frame_pipeline_items')
+        .select('stage')
+      
+      if (pipelineData) {
+        const counts: Record<string, number> = {}
+        pipelineData.forEach(item => {
+          counts[item.stage] = (counts[item.stage] || 0) + 1
+        })
+        setPipelineCounts(counts)
+      }
+      
+      // Fetch upcoming schedules
+      const { data: scheduleData } = await supabase
+        .from('frame_schedules')
+        .select('*')
+        .gte('scheduled_date', new Date().toISOString().split('T')[0])
+        .order('scheduled_date', { ascending: true })
+        .limit(5)
+      
+      setUpcomingSchedule(scheduleData || [])
+    } catch (error: any) {
+      console.error('Error fetching dashboard data:', error)
+      showToast('error', 'Failed to load dashboard')
+    } finally {
+      setLoading(false)
+    }
+  }, [user, showToast])
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 500)
-    return () => clearTimeout(timer)
-  }, [])
+    fetchDashboardData()
+  }, [fetchDashboardData])
 
   const stats = {
     inProgress: projects.filter(p => ['production', 'planning', 'research'].includes(p.status)).length,
@@ -271,25 +288,31 @@ export function Dashboard() {
             <div className="upcoming-schedule-card">
               <h2 className="section-title">Upcoming Schedule</h2>
               <div className="upcoming-list">
-                {MOCK_UPCOMING.map((item) => (
-                  <div key={item.id} className="upcoming-item">
-                    <div className="upcoming-date">
-                      {new Date(item.scheduled_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                {upcomingSchedule.length === 0 ? (
+                  <p style={{ color: 'var(--color-text-muted)', padding: 'var(--space-4)' }}>
+                    No upcoming schedules
+                  </p>
+                ) : (
+                  upcomingSchedule.map((item) => (
+                    <div key={item.id} className="upcoming-item">
+                      <div className="upcoming-date">
+                        {new Date(item.scheduled_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </div>
+                      <div className="upcoming-title">{item.title}</div>
+                      <div className="upcoming-platforms">
+                        {(item.platforms || []).map((p: string) => (
+                          <span
+                            key={p}
+                            className="platform-badge"
+                            style={{ backgroundColor: PLATFORM_COLORS[p] + '20', color: PLATFORM_COLORS[p] }}
+                          >
+                            {p}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    <div className="upcoming-title">{item.title}</div>
-                    <div className="upcoming-platforms">
-                      {item.platforms.map((p) => (
-                        <span
-                          key={p}
-                          className="platform-badge"
-                          style={{ backgroundColor: PLATFORM_COLORS[p] + '20', color: PLATFORM_COLORS[p] }}
-                        >
-                          {p}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
               <button className="btn btn-ghost" style={{ width: '100%', marginTop: 'var(--space-4)' }} onClick={() => navigate('/calendar')}>
                 View Calendar

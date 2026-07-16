@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../components/AuthContext'
 import { useToast } from '../components/ToastContext'
-import { PIPELINE_STAGES, CONTENT_TYPES, PLATFORMS, PipelineStage, ContentType } from '../lib/supabase'
+import { supabase, PIPELINE_STAGES, CONTENT_TYPES, PLATFORMS, PipelineStage, ContentType, FramePipelineItem, FrameProject } from '../lib/supabase'
 
-interface PipelineItem {
+interface PipelineItemDisplay {
   id: string
   title: string
   content_type: ContentType
@@ -12,21 +12,6 @@ interface PipelineItem {
   stage: PipelineStage
   project_id: string
 }
-
-const MOCK_PIPELINE_ITEMS: PipelineItem[] = [
-  { id: '1', title: 'Building a SaaS App', content_type: 'video', platforms: ['youtube', 'tiktok'], stage: 'script', project_id: 'p1' },
-  { id: '2', title: 'Top 10 VS Code Tips', content_type: 'video', platforms: ['youtube'], stage: 'record', project_id: 'p2' },
-  { id: '3', title: 'React Hooks Tutorial', content_type: 'course', platforms: ['youtube', 'blog'], stage: 'edit', project_id: 'p3' },
-  { id: '4', title: 'Productivity Thread', content_type: 'social', platforms: ['twitter', 'linkedin'], stage: 'research', project_id: 'p4' },
-  { id: '5', title: 'Indie Hacker Interview', content_type: 'podcast', platforms: ['podcast'], stage: 'outline', project_id: 'p5' },
-  { id: '6', title: 'CSS Grid Guide', content_type: 'blog', platforms: ['blog'], stage: 'thumbnail', project_id: 'p6' },
-  { id: '7', title: 'AI Tools Review', content_type: 'video', platforms: ['youtube', 'tiktok'], stage: 'seo', project_id: 'p7' },
-  { id: '8', title: 'DevOps Basics', content_type: 'video', platforms: ['youtube'], stage: 'upload', project_id: 'p8' },
-  { id: '9', title: 'Career Advice', content_type: 'podcast', platforms: ['podcast', 'youtube'], stage: 'published', project_id: 'p9' },
-  { id: '10', title: 'TypeScript Tips', content_type: 'video', platforms: ['youtube'], stage: 'script', project_id: 'p10' },
-  { id: '11', title: 'Startup Story', content_type: 'social', platforms: ['twitter'], stage: 'record', project_id: 'p11' },
-  { id: '12', title: 'API Design Patterns', content_type: 'course', platforms: ['youtube', 'blog'], stage: 'research', project_id: 'p12' },
-]
 
 const PLATFORM_COLORS: Record<string, string> = {
   youtube: '#ff0000',
@@ -83,20 +68,63 @@ const CONTENT_TYPE_ICONS: Record<ContentType, JSX.Element> = {
 }
 
 export function Pipeline() {
-  useAuth()
+  const { user } = useAuth()
   const { showToast } = useToast()
   useNavigate()
   const [loading, setLoading] = useState(true)
-  const [items, setItems] = useState<PipelineItem[]>(MOCK_PIPELINE_ITEMS)
+  const [items, setItems] = useState<PipelineItemDisplay[]>([])
   const [draggedItem, setDraggedItem] = useState<string | null>(null)
   const [dragOverColumn, setDragOverColumn] = useState<PipelineStage | null>(null)
   const [contentTypeFilter, setContentTypeFilter] = useState<ContentType | 'all'>('all')
   const [platformFilter, setPlatformFilter] = useState<string>('all')
 
+  const fetchPipelineItems = useCallback(async () => {
+    if (!user) return
+    
+    try {
+      // Fetch pipeline items and projects
+      const [pipelineResult, projectsResult] = await Promise.all([
+        supabase
+          .from('frame_pipeline_items')
+          .select('*')
+          .order('sort_order', { ascending: true }),
+        supabase
+          .from('frame_projects')
+          .select('id, title, content_type, platforms')
+          .order('updated_at', { ascending: false })
+      ])
+      
+      if (pipelineResult.error) throw pipelineResult.error
+      
+      const pipelineItems = (pipelineResult.data || []) as FramePipelineItem[]
+      const projects = (projectsResult.data || []) as FrameProject[]
+      const projectMap = new Map(projects.map(p => [p.id, p]))
+      
+      // Combine pipeline items with project info
+      const combinedItems: PipelineItemDisplay[] = pipelineItems.map(item => {
+        const project = projectMap.get(item.project_id)
+        return {
+          id: item.id,
+          title: item.title || project?.title || 'Untitled',
+          content_type: (project?.content_type as ContentType) || 'video',
+          platforms: project?.platforms || [],
+          stage: item.stage as PipelineStage,
+          project_id: item.project_id
+        }
+      })
+      
+      setItems(combinedItems)
+    } catch (error: any) {
+      console.error('Error fetching pipeline:', error)
+      showToast('error', 'Failed to load pipeline')
+    } finally {
+      setLoading(false)
+    }
+  }, [user, showToast])
+
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 500)
-    return () => clearTimeout(timer)
-  }, [])
+    fetchPipelineItems()
+  }, [fetchPipelineItems])
 
   const filteredItems = items.filter(item => {
     const matchesType = contentTypeFilter === 'all' || item.content_type === contentTypeFilter
@@ -140,14 +168,24 @@ export function Pipeline() {
     setDragOverColumn(null)
   }
 
-  const moveToNextStage = (item: PipelineItem) => {
+  const moveToNextStage = async (item: PipelineItemDisplay) => {
     const currentIndex = PIPELINE_STAGES.findIndex(s => s.value === item.stage)
     if (currentIndex < PIPELINE_STAGES.length - 1) {
       const nextStage = PIPELINE_STAGES[currentIndex + 1].value
-      setItems(prev => prev.map(i => 
-        i.id === item.id ? { ...i, stage: nextStage as PipelineStage } : i
-      ))
-      showToast('success', `Moved to ${nextStage}`)
+      try {
+        await supabase
+          .from('frame_pipeline_items')
+          .update({ stage: nextStage })
+          .eq('id', item.id)
+        
+        setItems(prev => prev.map(i => 
+          i.id === item.id ? { ...i, stage: nextStage as PipelineStage } : i
+        ))
+        showToast('success', `Moved to ${nextStage}`)
+      } catch (error) {
+        console.error('Error updating stage:', error)
+        showToast('error', 'Failed to update stage')
+      }
     }
   }
 

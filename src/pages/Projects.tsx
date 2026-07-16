@@ -1,31 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../components/AuthContext'
 import { useToast } from '../components/ToastContext'
-import { CONTENT_TYPES, PLATFORMS, PROJECT_STATUSES, ProjectStatus, ContentType } from '../lib/supabase'
-
-interface Project {
-  id: string
-  title: string
-  description: string | null
-  content_type: ContentType
-  platforms: string[]
-  status: ProjectStatus
-  priority: number
-  created_at: string
-  updated_at: string
-  next_action: string | null
-}
-
-const MOCK_PROJECTS: Project[] = [
-  { id: '1', title: 'Building a SaaS App in 2024', description: 'Complete tutorial on building a SaaS application', content_type: 'video', platforms: ['youtube', 'tiktok'], status: 'production', priority: 1, created_at: '2024-01-10', updated_at: '2024-01-15', next_action: 'Record narration' },
-  { id: '2', title: 'Top 10 VS Code Extensions', description: 'Best VS Code extensions for developers', content_type: 'video', platforms: ['youtube'], status: 'research', priority: 2, created_at: '2024-01-08', updated_at: '2024-01-14', next_action: 'Research competitors' },
-  { id: '3', title: 'React Hooks Deep Dive', description: 'Comprehensive course on React hooks', content_type: 'course', platforms: ['youtube', 'blog'], status: 'planning', priority: 1, created_at: '2024-01-05', updated_at: '2024-01-13', next_action: 'Create outline' },
-  { id: '4', title: 'Productivity Tips Thread', description: 'Twitter thread with productivity tips', content_type: 'social', platforms: ['twitter', 'linkedin'], status: 'review', priority: 3, created_at: '2024-01-03', updated_at: '2024-01-12', next_action: 'Final review' },
-  { id: '5', title: 'Indie Hacker Interview #15', description: 'Interview with successful indie hacker', content_type: 'podcast', platforms: ['podcast', 'youtube'], status: 'published', priority: 2, created_at: '2024-01-01', updated_at: '2024-01-11', next_action: null },
-  { id: '6', title: 'CSS Grid Complete Guide', description: 'Full CSS Grid tutorial', content_type: 'blog', platforms: ['blog'], status: 'concept', priority: 3, created_at: '2024-01-16', updated_at: '2024-01-16', next_action: 'Initial research' },
-  { id: '7', title: 'AI Tools Review 2024', description: 'Review of latest AI development tools', content_type: 'video', platforms: ['youtube', 'tiktok'], status: 'production', priority: 1, created_at: '2024-01-07', updated_at: '2024-01-15', next_action: 'Edit footage' },
-  { id: '8', title: 'DevOps Best Practices', description: 'DevOps workflow and tools', content_type: 'course', platforms: ['youtube'], status: 'archived', priority: 2, created_at: '2023-12-20', updated_at: '2024-01-05', next_action: null },
-]
+import { supabase, CONTENT_TYPES, PLATFORMS, PROJECT_STATUSES, ProjectStatus, ContentType, FrameProject } from '../lib/supabase'
 
 const PLATFORM_COLORS: Record<string, string> = {
   youtube: '#ff0000',
@@ -85,10 +61,10 @@ type SortOption = 'date' | 'priority' | 'status' | 'title'
 type ViewMode = 'grid' | 'list'
 
 export function Projects() {
-  useAuth()
+  const { user } = useAuth()
   const { showToast } = useToast()
   const [loading, setLoading] = useState(true)
-  const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS)
+  const [projects, setProjects] = useState<FrameProject[]>([])
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all')
   const [typeFilter, setTypeFilter] = useState<ContentType | 'all'>('all')
@@ -103,10 +79,28 @@ export function Projects() {
     platforms: ['youtube'] as string[],
   })
 
+  const fetchProjects = useCallback(async () => {
+    if (!user) return
+    
+    try {
+      const { data, error } = await supabase
+        .from('frame_projects')
+        .select('*')
+        .order('updated_at', { ascending: false })
+      
+      if (error) throw error
+      setProjects(data || [])
+    } catch (error: any) {
+      console.error('Error fetching projects:', error)
+      showToast('error', 'Failed to load projects')
+    } finally {
+      setLoading(false)
+    }
+  }, [user, showToast])
+
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 500)
-    return () => clearTimeout(timer)
-  }, [])
+    fetchProjects()
+  }, [fetchProjects])
 
   const filteredProjects = projects
     .filter(project => {
@@ -135,29 +129,55 @@ export function Projects() {
     return statusInfo?.color || '#71717a'
   }
 
-  const handleCreateProject = () => {
+  const handleCreateProject = async () => {
     if (!newProject.title.trim()) {
       showToast('error', 'Please enter a project title')
       return
     }
 
-    const project: Project = {
-      id: String(Date.now()),
-      title: newProject.title,
-      description: newProject.description || null,
-      content_type: newProject.content_type,
-      platforms: newProject.platforms,
-      status: 'concept',
-      priority: 3,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      next_action: 'Initial research',
+    try {
+      const { data, error } = await supabase
+        .from('frame_projects')
+        .insert({
+          title: newProject.title,
+          description: newProject.description || null,
+          content_type: newProject.content_type,
+          platforms: newProject.platforms,
+          status: 'concept',
+          priority: 3,
+        })
+        .select()
+        .single()
+      
+      if (error) throw error
+      
+      setProjects(prev => [data, ...prev])
+      setShowCreateModal(false)
+      setNewProject({ title: '', description: '', content_type: 'video', platforms: ['youtube'] })
+      showToast('success', 'Project created successfully')
+    } catch (error: any) {
+      console.error('Error creating project:', error)
+      showToast('error', 'Failed to create project')
     }
+  }
 
-    setProjects(prev => [project, ...prev])
-    setShowCreateModal(false)
-    setNewProject({ title: '', description: '', content_type: 'video', platforms: ['youtube'] })
-    showToast('success', 'Project created successfully')
+  const handleDeleteProject = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this project?')) return
+    
+    try {
+      const { error } = await supabase
+        .from('frame_projects')
+        .delete()
+        .eq('id', id)
+      
+      if (error) throw error
+      
+      setProjects(prev => prev.filter(p => p.id !== id))
+      showToast('success', 'Project deleted')
+    } catch (error: any) {
+      console.error('Error deleting project:', error)
+      showToast('error', 'Failed to delete project')
+    }
   }
 
   const togglePlatform = (platform: string) => {
@@ -307,7 +327,7 @@ export function Projects() {
               <div key={project.id} className="project-card">
                 <div className="project-card-header">
                   <span className="project-type-badge" style={{ color: 'var(--color-accent)' }}>
-                    {CONTENT_TYPE_ICONS[project.content_type]}
+                    {CONTENT_TYPE_ICONS[project.content_type as ContentType]}
                     {CONTENT_TYPES.find(t => t.value === project.content_type)?.label}
                   </span>
                   <span 
@@ -322,7 +342,7 @@ export function Projects() {
                   <p className="project-card-description">{project.description}</p>
                 )}
                 <div className="project-card-platforms">
-                  {project.platforms.map(platform => (
+                  {(project.platforms || []).map(platform => (
                     <span 
                       key={platform}
                       className="project-platform-badge"
@@ -332,9 +352,9 @@ export function Projects() {
                     </span>
                   ))}
                 </div>
-                {project.next_action && (
+                {project.notes && (
                   <div className="project-card-next-action">
-                    <span className="next-action-label">Next:</span> {project.next_action}
+                    <span className="next-action-label">Notes:</span> {project.notes}
                   </div>
                 )}
                 <div className="project-card-footer">
@@ -351,7 +371,7 @@ export function Projects() {
               <div key={project.id} className="project-list-item">
                 <div className="project-list-main">
                   <div className="project-list-type">
-                    {CONTENT_TYPE_ICONS[project.content_type]}
+                    {CONTENT_TYPE_ICONS[project.content_type as ContentType]}
                   </div>
                   <div className="project-list-info">
                     <h3 className="project-list-title">{project.title}</h3>
@@ -361,7 +381,7 @@ export function Projects() {
                   </div>
                 </div>
                 <div className="project-list-platforms">
-                  {project.platforms.map(platform => (
+                  {(project.platforms || []).map(platform => (
                     <span 
                       key={platform}
                       className="platform-dot"
@@ -376,11 +396,15 @@ export function Projects() {
                 >
                   {PROJECT_STATUSES.find(s => s.value === project.status)?.label}
                 </span>
-                {project.next_action && (
-                  <div className="project-list-action">
-                    <span className="next-action-label">Next:</span> {project.next_action}
-                  </div>
-                )}
+                <div className="project-list-action">
+                  <button 
+                    className="btn btn-small btn-dangerous"
+                    onClick={() => handleDeleteProject(project.id)}
+                    style={{ marginRight: '8px' }}
+                  >
+                    Delete
+                  </button>
+                </div>
                 <div className="project-list-date">
                   {new Date(project.updated_at).toLocaleDateString()}
                 </div>
