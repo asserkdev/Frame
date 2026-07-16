@@ -20,18 +20,6 @@ interface BrandAsset {
   updated_at: string
 }
 
-const MOCK_ASSETS: BrandAsset[] = [
-  { id: '1', title: 'Primary Brand Color', asset_type: 'color', file_url: null, file_data: null, color_hex: '#a78bfa', color_name: 'Purple Accent', tags: ['brand', 'primary'], quick_copy_code: '#a78bfa', usage_notes: 'Main accent color for buttons and highlights', last_used_at: '2024-01-15', usage_count: 24, created_at: '2023-01-01', updated_at: '2024-01-15' },
-  { id: '2', title: 'Secondary Brand Color', asset_type: 'color', file_url: null, file_data: null, color_hex: '#f472b6', color_name: 'Pink', tags: ['brand', 'secondary'], quick_copy_code: '#f472b6', usage_notes: 'Secondary accent for status indicators', last_used_at: '2024-01-14', usage_count: 18, created_at: '2023-01-01', updated_at: '2024-01-14' },
-  { id: '3', title: 'Background Dark', asset_type: 'color', file_url: null, file_data: null, color_hex: '#0c0c0e', color_name: 'Near Black', tags: ['background', 'dark'], quick_copy_code: '#0c0c0e', usage_notes: 'Primary background color', last_used_at: '2024-01-15', usage_count: 45, created_at: '2023-01-01', updated_at: '2024-01-15' },
-  { id: '4', title: 'Card Background', asset_type: 'color', file_url: null, file_data: null, color_hex: '#16161a', color_name: 'Card Dark', tags: ['background', 'card'], quick_copy_code: '#16161a', usage_notes: 'Card and elevated surface background', last_used_at: '2024-01-13', usage_count: 32, created_at: '2023-01-01', updated_at: '2024-01-13' },
-  { id: '5', title: 'Main Logo', asset_type: 'logo', file_url: '/assets/logo.png', file_data: null, color_hex: null, color_name: null, tags: ['logo', 'primary'], quick_copy_code: '<img src="/assets/logo.png" alt="Logo" />', usage_notes: 'Primary logo for headers', last_used_at: '2024-01-15', usage_count: 15, created_at: '2023-01-01', updated_at: '2024-01-15' },
-  { id: '6', title: 'Icon Mark', asset_type: 'logo', file_url: '/assets/icon.png', file_data: null, color_hex: null, color_name: null, tags: ['logo', 'icon', 'favicon'], quick_copy_code: '<img src="/assets/icon.png" alt="Icon" />', usage_notes: 'Square icon for favicons and app icons', last_used_at: '2024-01-14', usage_count: 8, created_at: '2023-01-01', updated_at: '2024-01-14' },
-  { id: '7', title: 'Brand Font', asset_type: 'font', file_url: null, file_data: 'Inter', color_hex: null, color_name: null, tags: ['typography', 'brand'], quick_copy_code: "font-family: 'Inter', sans-serif;", usage_notes: 'Primary brand typography', last_used_at: '2024-01-12', usage_count: 12, created_at: '2023-01-01', updated_at: '2024-01-12' },
-  { id: '8', title: 'YouTube Thumbnail Template', asset_type: 'template', file_url: '/templates/thumbnail-yt.png', file_data: '{"width":1280,"height":720}', color_hex: null, color_name: null, tags: ['template', 'youtube', 'thumbnail'], quick_copy_code: null, usage_notes: '16:9 ratio, 1280x720px', last_used_at: '2024-01-10', usage_count: 6, created_at: '2023-06-01', updated_at: '2024-01-10' },
-  { id: '9', title: 'Twitter Card Image', asset_type: 'template', file_url: '/templates/twitter-card.png', file_data: '{"width":1200,"height":628}', color_hex: null, color_name: null, tags: ['template', 'twitter', 'social'], quick_copy_code: null, usage_notes: 'Twitter card preview image', last_used_at: '2024-01-08', usage_count: 4, created_at: '2023-06-01', updated_at: '2024-01-08' },
-  { id: '10', title: 'Brand Pattern', asset_type: 'image', file_url: '/assets/pattern.png', file_data: null, color_hex: null, color_name: null, tags: ['pattern', 'background'], quick_copy_code: 'url("/assets/pattern.png")', usage_notes: 'Subtle background pattern', last_used_at: '2024-01-05', usage_count: 3, created_at: '2023-03-01', updated_at: '2024-01-05' },
-]
 
 const ASSET_TYPE_ICONS: Record<AssetType, JSX.Element> = {
   logo: (
@@ -104,7 +92,7 @@ export function BrandAssets() {
   useAuth()
   const { showToast } = useToast()
   const [loading, setLoading] = useState(true)
-  const [assets] = useState<BrandAsset[]>(MOCK_ASSETS)
+  const [assets] = useState<BrandAsset[]>([])
   const [typeFilter, setTypeFilter] = useState<AssetType | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [showColorPalette, setShowColorPalette] = useState(false)

@@ -73,9 +73,11 @@ function NotConfiguredPage() {
 }
 
 function App() {
+  const basename = import.meta.env.BASE_URL || '/'
+
   if (!isConfigured) {
     return (
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <NotConfiguredPage />
       </BrowserRouter>
     )
@@ -85,10 +87,10 @@ function App() {
     <ErrorBoundary>
       <AuthProvider>
         <ToastProvider>
-          <BrowserRouter>
+          <BrowserRouter basename={basename}>
             <Routes>
               <Route
-                path="/auth"
+                path="auth"
                 element={
                   <PublicRoute>
                     <AuthPage />
@@ -105,7 +107,7 @@ function App() {
                   </ProtectedRoute>
                 }
               >
-                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="pipeline" element={<Pipeline />} />
                 <Route path="projects" element={<Projects />} />
@@ -115,7 +117,7 @@ function App() {
                 <Route path="optimizer" element={<Optimizer />} />
                 <Route path="calendar" element={<Calendar />} />
               </Route>
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<Navigate to="dashboard" replace />} />
             </Routes>
           </BrowserRouter>
         </ToastProvider>

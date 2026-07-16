@@ -19,14 +19,6 @@ interface TrendingTopic {
   updated_at: string
 }
 
-const MOCK_TOPICS: TrendingTopic[] = [
-  { id: '1', title: 'AI Code Assistants Revolution', source_url: 'https://techcrunch.com/ai-coding', source_platform: 'TechCrunch', themes: ['AI', 'Productivity', 'Development'], tags: ['ai-tools', 'coding', 'productivity'], notes: 'Interesting angle on how AI is changing developer workflows', extracted_content: 'AI code assistants are becoming essential tools for developers...', relevance_score: 95, status: 'reviewed', linked_project_id: null, created_at: '2024-01-14', updated_at: '2024-01-15' },
-  { id: '2', title: 'Remote Work Productivity Tips', source_url: 'https://medium.com/remote-work', source_platform: 'Medium', themes: ['Remote Work', 'Productivity', 'Work-Life Balance'], tags: ['remote', 'productivity', 'tips'], notes: 'Great collection of actionable tips', extracted_content: 'Working remotely requires a different set of skills...', relevance_score: 88, status: 'used', linked_project_id: 'p4', created_at: '2024-01-13', updated_at: '2024-01-14' },
-  { id: '3', title: 'Building in Public Trend', source_url: 'https://twitter.com/search?q=buildinginpublic', source_platform: 'Twitter', themes: ['Indie Hacking', 'Startups', 'Transparency'], tags: ['startups', 'building-in-public', 'indie-hacker'], notes: 'Popular movement, great for engagement', extracted_content: 'Building in public is about sharing your journey...', relevance_score: 82, status: 'reviewed', linked_project_id: 'p5', created_at: '2024-01-12', updated_at: '2024-01-13' },
-  { id: '4', title: 'TypeScript 5.0 Features', source_url: 'https://dev.to/typescript', source_platform: 'Dev.to', themes: ['TypeScript', 'JavaScript', 'Development'], tags: ['typescript', 'javascript', 'programming'], notes: 'New features worth covering', extracted_content: 'TypeScript 5.0 brings exciting new features...', relevance_score: 90, status: 'collected', linked_project_id: null, created_at: '2024-01-15', updated_at: '2024-01-15' },
-  { id: '5', title: 'SaaS Pricing Strategies', source_url: 'https://stratechery.com/pricing', source_platform: 'Stratechery', themes: ['SaaS', 'Business', 'Pricing'], tags: ['saas', 'pricing', 'business'], notes: 'Comprehensive analysis of SaaS pricing models', extracted_content: 'Pricing is one of the most critical decisions...', relevance_score: 85, status: 'reviewed', linked_project_id: null, created_at: '2024-01-11', updated_at: '2024-01-12' },
-  { id: '6', title: 'Vim vs Neovim', source_url: 'https://reddit.com/r/vim', source_platform: 'Reddit', themes: ['Vim', 'Editors', 'Developer Tools'], tags: ['vim', 'neovim', 'editors'], notes: 'Good debate topic', extracted_content: 'The debate between Vim and Neovim continues...', relevance_score: 72, status: 'collected', linked_project_id: null, created_at: '2024-01-10', updated_at: '2024-01-10' },
-]
 
 const STATUS_COLORS: Record<TopicStatus, string> = {
   collected: '#60a5fa',
@@ -48,7 +40,7 @@ export function Trending() {
   useAuth()
   const { showToast } = useToast()
   const [loading, setLoading] = useState(true)
-  const [topics, setTopics] = useState<TrendingTopic[]>(MOCK_TOPICS)
+  const [topics, setTopics] = useState<TrendingTopic[]>([])
   const [urlInput, setUrlInput] = useState('')
   const [isExtracting, setIsExtracting] = useState(false)
   const [extractedTopic, setExtractedTopic] = useState<Partial<TrendingTopic> | null>(null)
