@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS frame_episodes (
 -- ========================================
 -- BRAND ASSETS TABLE
 -- Logos, colors, fonts, templates, etc.
-// ========================================
+-- ========================================
 
 CREATE TABLE IF NOT EXISTS frame_brand_assets (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
